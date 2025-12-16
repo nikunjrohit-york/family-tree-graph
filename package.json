@@ -1,0 +1,20 @@
+{
+  "name": "family-tree-graph",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "start": "turbo start",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "clean": "turbo clean"
+  },
+  "devDependencies": {
+    "turbo": "^1.10.12"
+  },
+  "packageManager": "npm@9.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

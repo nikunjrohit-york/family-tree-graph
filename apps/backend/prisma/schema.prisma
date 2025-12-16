@@ -1,0 +1,154 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model FamilyTree {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(255)
+  description String?
+  ownerName   String?  @map("owner_name") @db.VarChar(255)
+  treeType    TreeType @default(FAMILY_TREE) @map("tree_type")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  people        Person[]
+  relationships Relationship[]
+
+  @@map("family_trees")
+}
+
+model Person {
+  id                   String    @id @default(uuid())
+  name                 String    @db.VarChar(255)
+  phone                String?   @db.VarChar(20)
+  email                String?   @db.VarChar(255)
+  address              String?
+  birthDate            DateTime? @map("birth_date") @db.Date
+  gender               Gender?
+  occupation           String?   @db.VarChar(255)
+  notes                String?
+  relationshipToBride  String?   @map("relationship_to_bride") @db.VarChar(100)
+  relationshipToGroom  String?   @map("relationship_to_groom") @db.VarChar(100)
+  relationshipToOwner  String?   @map("relationship_to_owner") @db.VarChar(100)
+  positionX            Float     @default(0) @map("position_x")
+  positionY            Float     @default(0) @map("position_y")
+  treeId               String    @map("tree_id")
+  isAlive              Boolean   @default(true) @map("is_alive")
+  profilePicture       String?   @map("profile_picture")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  familyTree           FamilyTree     @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  relationshipsFrom    Relationship[] @relation("FromPerson")
+  relationshipsTo      Relationship[] @relation("ToPerson")
+
+  @@map("people")
+}
+
+model Relationship {
+  id                     String           @id @default(uuid())
+  fromPersonId           String           @map("from_person_id")
+  toPersonId             String           @map("to_person_id")
+  relationshipType       RelationshipType @map("relationship_type")
+  customRelationshipName String?          @map("custom_relationship_name") @db.VarChar(100)
+  cousinDegree           Int?             @map("cousin_degree")
+  generationRemoval      Int?             @map("generation_removal")
+  generationDistance     Int?             @map("generation_distance")
+  startDate              DateTime?        @map("start_date") @db.Date
+  endDate                DateTime?        @map("end_date") @db.Date
+  treeId                 String           @map("tree_id")
+  notes                  String?
+  createdAt              DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  fromPerson  Person     @relation("FromPerson", fields: [fromPersonId], references: [id], onDelete: Cascade)
+  toPerson    Person     @relation("ToPerson", fields: [toPersonId], references: [id], onDelete: Cascade)
+  familyTree  FamilyTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+
+  @@unique([fromPersonId, toPersonId, relationshipType, treeId])
+  @@map("relationships")
+}
+
+enum TreeType {
+  FAMILY_TREE
+  WEDDING_GUESTS
+  SOCIAL_NETWORK
+  CUSTOM
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum RelationshipType {
+  // Direct family
+  PARENT
+  CHILD
+  SIBLING
+  SPOUSE
+
+  // Extended family - Grandparents/Grandchildren
+  GRANDPARENT
+  GRANDCHILD
+  GREAT_GRANDPARENT
+  GREAT_GRANDCHILD
+
+  // Aunts/Uncles and Nieces/Nephews
+  AUNT
+  UNCLE
+  NIECE
+  NEPHEW
+  GREAT_AUNT
+  GREAT_UNCLE
+  GREAT_NIECE
+  GREAT_NEPHEW
+
+  // Cousins (dynamic calculation)
+  COUSIN
+
+  // In-laws
+  MOTHER_IN_LAW
+  FATHER_IN_LAW
+  DAUGHTER_IN_LAW
+  SON_IN_LAW
+  SISTER_IN_LAW
+  BROTHER_IN_LAW
+
+  // Step relationships
+  STEPPARENT
+  STEPCHILD
+  STEPSIBLING
+
+  // Half relationships
+  HALF_SIBLING
+
+  // Adopted relationships
+  ADOPTED_PARENT
+  ADOPTED_CHILD
+
+  // Godparents/Godchildren
+  GODPARENT
+  GODCHILD
+
+  // Friends and other relationships
+  CLOSE_FRIEND
+  FAMILY_FRIEND
+  MENTOR
+  MENTEE
+
+  // Custom relationship
+  CUSTOM
+}
