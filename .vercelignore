@@ -1,0 +1,44 @@
+# Dependencies
+node_modules
+*/node_modules
+
+# Development files
+*.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build artifacts (except dist)
+.turbo
+.next
+coverage
+*.tsbuildinfo
+
+# Source files (keep only built files)
+apps/*/src
+packages/*/src
+!apps/*/dist
+!packages/*/dist
+
+# Documentation (optional, remove if you want docs in deployment)
+*.md
+docs/
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# Testing
+__tests__
+*.test.*
+*.spec.*
+test/
+
+# Misc
+.DS_Store
+Thumbs.db

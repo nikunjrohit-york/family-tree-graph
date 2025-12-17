@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "github": {
+    "enabled": false
+  },
+  "builds": [
+    {
+      "src": "apps/backend/dist/main.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "apps/frontend/dist/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/apps/backend/dist/main.js"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/apps/frontend/dist/assets/$1"
+    },
+    {
+      "src": "/(.*)\\.(js|css|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)",
+      "dest": "/apps/frontend/dist/$1.$2"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/apps/frontend/dist/index.html"
+    }
+  ],
+  "functions": {
+    "apps/backend/dist/main.js": {
+      "runtime": "nodejs18.x"
+    }
+  }
+}
