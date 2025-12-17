@@ -1,18 +1,19 @@
-import { useState } from "react";
-import { supabase } from "../lib/supabase";
-import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+
+import { supabase } from '../lib/supabase';
 
 export default function Signup() {
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-    firstName: "",
-    lastName: "",
-    username: "",
-    dateOfBirth: "",
-    phone: "",
+    email: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+    username: '',
+    dateOfBirth: '',
+    phone: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +21,7 @@ export default function Signup() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
@@ -28,19 +29,19 @@ export default function Signup() {
 
   const validateForm = () => {
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+      setError('Passwords do not match');
       return false;
     }
     if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long");
+      setError('Password must be at least 6 characters long');
       return false;
     }
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      setError("First name and last name are required");
+      setError('First name and last name are required');
       return false;
     }
     if (!formData.username.trim()) {
-      setError("Username is required");
+      setError('Username is required');
       return false;
     }
     return true;
@@ -84,47 +85,47 @@ export default function Signup() {
         // Don't navigate, let them confirm email first
       } else {
         toast.success(
-          "🎉 Account Created! Welcome! Your account has been created successfully."
+          '🎉 Account Created! Welcome! Your account has been created successfully.'
         );
-        navigate("/");
+        navigate('/');
       }
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className='min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8'>
+      <div className='max-w-md w-full space-y-8'>
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className='mt-6 text-center text-3xl font-extrabold text-gray-900'>
             Create your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className='mt-2 text-center text-sm text-gray-600'>
             Please fill in all the details to create your account
           </p>
         </div>
-        <form className="mt-8 space-y-4" onSubmit={handleSignup}>
-          <div className="space-y-4">
+        <form className='mt-8 space-y-4' onSubmit={handleSignup}>
+          <div className='space-y-4'>
             {/* Personal Information */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className='grid grid-cols-2 gap-4'>
               <div>
                 <input
-                  type="text"
-                  name="firstName"
+                  type='text'
+                  name='firstName'
                   required
-                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="First Name"
+                  className='appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm'
+                  placeholder='First Name'
                   value={formData.firstName}
                   onChange={handleInputChange}
                 />
               </div>
               <div>
                 <input
-                  type="text"
-                  name="lastName"
+                  type='text'
+                  name='lastName'
                   required
-                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="Last Name"
+                  className='appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm'
+                  placeholder='Last Name'
                   value={formData.lastName}
                   onChange={handleInputChange}
                 />
@@ -133,11 +134,11 @@ export default function Signup() {
 
             <div>
               <input
-                type="text"
-                name="username"
+                type='text'
+                name='username'
                 required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Username"
+                className='appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm'
+                placeholder='Username'
                 value={formData.username}
                 onChange={handleInputChange}
               />
@@ -145,11 +146,11 @@ export default function Signup() {
 
             <div>
               <input
-                type="email"
-                name="email"
+                type='email'
+                name='email'
                 required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
+                className='appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm'
+                placeholder='Email address'
                 value={formData.email}
                 onChange={handleInputChange}
               />
@@ -157,10 +158,10 @@ export default function Signup() {
 
             <div>
               <input
-                type="tel"
-                name="phone"
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Phone Number (optional)"
+                type='tel'
+                name='phone'
+                className='appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm'
+                placeholder='Phone Number (optional)'
                 value={formData.phone}
                 onChange={handleInputChange}
               />
@@ -168,10 +169,10 @@ export default function Signup() {
 
             <div>
               <input
-                type="date"
-                name="dateOfBirth"
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Date of Birth (optional)"
+                type='date'
+                name='dateOfBirth'
+                className='appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm'
+                placeholder='Date of Birth (optional)'
                 value={formData.dateOfBirth}
                 onChange={handleInputChange}
               />
@@ -180,11 +181,11 @@ export default function Signup() {
             {/* Password Fields */}
             <div>
               <input
-                type="password"
-                name="password"
+                type='password'
+                name='password'
                 required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
+                className='appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm'
+                placeholder='Password'
                 value={formData.password}
                 onChange={handleInputChange}
               />
@@ -192,11 +193,11 @@ export default function Signup() {
 
             <div>
               <input
-                type="password"
-                name="confirmPassword"
+                type='password'
+                name='confirmPassword'
                 required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Confirm Password"
+                className='appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm'
+                placeholder='Confirm Password'
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
               />
@@ -204,26 +205,26 @@ export default function Signup() {
           </div>
 
           {error && (
-            <div className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-md border border-red-200">
+            <div className='text-red-500 text-sm text-center bg-red-50 p-3 rounded-md border border-red-200'>
               {error}
             </div>
           )}
 
           <div>
             <button
-              type="submit"
+              type='submit'
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className='group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed'
             >
-              {loading ? "Creating Account..." : "Create Account"}
+              {loading ? 'Creating Account...' : 'Create Account'}
             </button>
           </div>
 
-          <div className="text-sm text-center">
-            <span className="text-gray-500">Already have an account? </span>
+          <div className='text-sm text-center'>
+            <span className='text-gray-500'>Already have an account? </span>
             <Link
-              to="/login"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
+              to='/login'
+              className='font-medium text-indigo-600 hover:text-indigo-500'
             >
               Sign in
             </Link>

@@ -1,9 +1,10 @@
-import { render, screen } from "@testing-library/react";
-import { vi } from "vitest";
-import App from "../App";
+import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
+
+import App from '../App';
 
 // Mock the API calls to prevent network requests during testing
-vi.mock("../services/api", () => ({
+vi.mock('../services/api', () => ({
   familyTreeApi: {
     getAll: vi.fn().mockResolvedValue([]),
   },
@@ -12,16 +13,16 @@ vi.mock("../services/api", () => ({
   },
 }));
 
-describe("App", () => {
-  it("renders the main heading", () => {
+describe('App', () => {
+  it('renders the main heading', () => {
     render(<App />);
     expect(
-      screen.getByText("Family Tree Graph Management System")
+      screen.getByText('Family Tree Graph Management System')
     ).toBeDefined();
   });
 
-  it("renders loading state initially", () => {
+  it('renders loading state initially', () => {
     render(<App />);
-    expect(screen.getByText("Loading...")).toBeDefined();
+    expect(screen.getByText('Loading...')).toBeDefined();
   });
 });
