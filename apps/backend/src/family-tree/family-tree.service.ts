@@ -1,13 +1,33 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  CreateFamilyTreeDto,
+  UpdateFamilyTreeDto,
+  FamilyTreeStats,
+  FamilyInsights,
+} from '@family-tree/shared';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateFamilyTreeDto, UpdateFamilyTreeDto, FamilyTreeStats, FamilyInsights } from '@family-tree/shared';
-import { FamilyTree } from '@prisma/client';
+import {
+  FamilyTree,
+  FamilyTreeWithPeople,
+  Person,
+  Relationship,
+  RelationshipType,
+} from '../types/prisma.types';
+import { mapPrismaPersonToShared } from '../utils/type-mappers';
 
 @Injectable()
 export class FamilyTreeService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createFamilyTreeDto: CreateFamilyTreeDto, userId: string): Promise<any> {
+  async create(
+    createFamilyTreeDto: CreateFamilyTreeDto,
+    userId: string,
+  ): Promise<FamilyTree> {
     try {
       const familyTree = await this.prisma.familyTree.create({
         data: {
@@ -15,7 +35,7 @@ export class FamilyTreeService {
           description: createFamilyTreeDto.description,
           ownerName: createFamilyTreeDto.ownerName,
           treeType: createFamilyTreeDto.treeType,
-          userId: userId,
+          userId,
         },
       });
 
@@ -25,12 +45,12 @@ export class FamilyTreeService {
     }
   }
 
-  async findAll(userId: string): Promise<any[]> {
+  async findAll(userId: string): Promise<FamilyTree[]> {
     return this.prisma.familyTree.findMany({
       where: {
         OR: [
-          { userId: userId }, // Trees owned by user
-          { sharedWith: { some: { userId: userId } } }, // Trees shared with user
+          { userId }, // Trees owned by user
+          { sharedWith: { some: { userId } } }, // Trees shared with user
           { isPublic: true }, // Public trees
         ],
       },
@@ -54,13 +74,13 @@ export class FamilyTreeService {
     });
   }
 
-  async findOne(id: string, userId: string): Promise<any> {
+  async findOne(id: string, userId: string): Promise<FamilyTreeWithPeople> {
     const familyTree = await this.prisma.familyTree.findFirst({
       where: {
         id,
         OR: [
-          { userId: userId }, // User owns the tree
-          { sharedWith: { some: { userId: userId } } }, // Tree is shared with user
+          { userId }, // User owns the tree
+          { sharedWith: { some: { userId } } }, // Tree is shared with user
           { isPublic: true }, // Tree is public
         ],
       },
@@ -91,13 +111,18 @@ export class FamilyTreeService {
     });
 
     if (!familyTree) {
-      throw new NotFoundException(`Family tree with ID ${id} not found or access denied`);
+      throw new NotFoundException(
+        `Family tree with ID ${id} not found or access denied`,
+      );
     }
 
     return familyTree;
   }
 
-  async update(id: string, updateFamilyTreeDto: UpdateFamilyTreeDto): Promise<FamilyTree> {
+  async update(
+    id: string,
+    updateFamilyTreeDto: UpdateFamilyTreeDto,
+  ): Promise<FamilyTree> {
     try {
       const familyTree = await this.prisma.familyTree.update({
         where: { id },
@@ -137,18 +162,22 @@ export class FamilyTreeService {
     if (!familyTree) {
       throw new NotFoundException(`Family tree with ID ${id} not found`);
     }
-    
+
     const totalPeople = familyTree.people.length;
     const totalRelationships = familyTree.relationships.length;
-    
+
     // Calculate relationship type breakdown
-    const relationshipTypeBreakdown = familyTree.relationships.reduce((acc, rel) => {
-      acc[rel.relationshipType] = (acc[rel.relationshipType] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const relationshipTypeBreakdown = familyTree.relationships.reduce(
+      (acc: Record<string, number>, rel: Relationship) => {
+        acc[rel.relationshipType] = (acc[rel.relationshipType] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // Calculate average relationships per person
-    const averageRelationshipsPerPerson = totalPeople > 0 ? totalRelationships / totalPeople : 0;
+    const averageRelationshipsPerPerson =
+      totalPeople > 0 ? totalRelationships / totalPeople : 0;
 
     // Calculate generations (simplified - could be more sophisticated)
     const generations = this.calculateGenerations(familyTree.relationships);
@@ -158,7 +187,7 @@ export class FamilyTreeService {
       totalRelationships,
       generations,
       averageRelationshipsPerPerson,
-      relationshipTypeBreakdown: relationshipTypeBreakdown as any,
+      relationshipTypeBreakdown,
     };
   }
 
@@ -174,57 +203,81 @@ export class FamilyTreeService {
     if (!familyTree) {
       throw new NotFoundException(`Family tree with ID ${id} not found`);
     }
-    
+
     const people = familyTree.people;
     const familySize = people.length;
 
     // Find oldest and youngest people
-    const peopleWithBirthDates = people.filter(p => p.birthDate);
-    const oldestPerson = peopleWithBirthDates.reduce((oldest, person) => 
-      !oldest || (person.birthDate && person.birthDate < oldest.birthDate) ? person : oldest
-    , null);
-    
-    const youngestPerson = peopleWithBirthDates.reduce((youngest, person) => 
-      !youngest || (person.birthDate && person.birthDate > youngest.birthDate) ? person : youngest
-    , null);
+    const peopleWithBirthDates = people.filter((p: Person) => p.birthDate);
+    const oldestPerson = peopleWithBirthDates.reduce(
+      (oldest: Person | null, person: Person) =>
+        !oldest || (person.birthDate && person.birthDate < oldest.birthDate)
+          ? person
+          : oldest,
+      null,
+    );
+
+    const youngestPerson = peopleWithBirthDates.reduce(
+      (youngest: Person | null, person: Person) =>
+        !youngest || (person.birthDate && person.birthDate > youngest.birthDate)
+          ? person
+          : youngest,
+      null,
+    );
 
     // Calculate average age
     const currentDate = new Date();
-    const ages = peopleWithBirthDates.map(person => {
-      const birthDate = new Date(person.birthDate);
+    const ages = peopleWithBirthDates.map((person: Person) => {
+      const birthDate = new Date(person.birthDate!);
       return currentDate.getFullYear() - birthDate.getFullYear();
     });
-    const averageAge = ages.length > 0 ? ages.reduce((sum, age) => sum + age, 0) / ages.length : undefined;
+    const averageAge =
+      ages.length > 0
+        ? ages.reduce((sum: number, age: number) => sum + age, 0) / ages.length
+        : undefined;
 
     // Find most connected person
-    const connectionCounts = people.map(person => {
-      const connections = familyTree.relationships.filter(rel => 
-        rel.fromPersonId === person.id || rel.toPersonId === person.id
+    const connectionCounts = people.map((person: Person) => {
+      const connections = familyTree.relationships.filter(
+        (rel: Relationship) =>
+          rel.fromPersonId === person.id || rel.toPersonId === person.id,
       ).length;
       return { person, connections };
     });
-    
-    const mostConnectedPerson = connectionCounts.reduce((most, current) => 
-      !most || current.connections > most.connections ? current : most
-    , null)?.person;
+
+    const mostConnectedPerson = connectionCounts.reduce(
+      (
+        most: { person: Person; connections: number } | null,
+        current: { person: Person; connections: number },
+      ) => (!most || current.connections > most.connections ? current : most),
+      null,
+    )?.person;
 
     return {
       largestGeneration: 1, // Simplified
-      oldestPerson: oldestPerson as any,
-      youngestPerson: youngestPerson as any,
-      mostConnectedPerson: mostConnectedPerson as any,
+      oldestPerson: oldestPerson
+        ? mapPrismaPersonToShared(oldestPerson)
+        : undefined,
+      youngestPerson: youngestPerson
+        ? mapPrismaPersonToShared(youngestPerson)
+        : undefined,
+      mostConnectedPerson: mostConnectedPerson
+        ? mapPrismaPersonToShared(mostConnectedPerson)
+        : undefined,
       familySize,
       averageAge,
     };
   }
 
-  private calculateGenerations(relationships: any[]): number {
+  private calculateGenerations(relationships: Relationship[]): number {
     // Simplified generation calculation
     // In a real implementation, this would use graph traversal to find the longest path
-    const parentChildRelationships = relationships.filter(rel => 
-      rel.relationshipType === 'PARENT' || rel.relationshipType === 'CHILD'
+    const parentChildRelationships = relationships.filter(
+      (rel: Relationship) =>
+        rel.relationshipType === RelationshipType.PARENT ||
+        rel.relationshipType === RelationshipType.CHILD,
     );
-    
+
     // For now, return a simple estimate
     return Math.max(1, Math.ceil(parentChildRelationships.length / 2));
   }

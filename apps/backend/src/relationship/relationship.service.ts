@@ -1,17 +1,32 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { CreateRelationshipDto } from '@family-tree/shared';
-import { Relationship, RelationshipType } from '@prisma/client';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+
+import { PrismaService } from '../prisma/prisma.service';
+import {
+  Relationship,
+  RelationshipWithPeople,
+  RelationshipType,
+} from '../types/prisma.types';
 
 @Injectable()
 export class RelationshipService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createRelationshipDto: CreateRelationshipDto): Promise<Relationship> {
+  async create(
+    createRelationshipDto: CreateRelationshipDto,
+  ): Promise<Relationship> {
     // Validate that both people exist
     const [fromPerson, toPerson] = await Promise.all([
-      this.prisma.person.findUnique({ where: { id: createRelationshipDto.fromPersonId } }),
-      this.prisma.person.findUnique({ where: { id: createRelationshipDto.toPersonId } }),
+      this.prisma.person.findUnique({
+        where: { id: createRelationshipDto.fromPersonId },
+      }),
+      this.prisma.person.findUnique({
+        where: { id: createRelationshipDto.toPersonId },
+      }),
     ]);
 
     if (!fromPerson || !toPerson) {
@@ -19,8 +34,12 @@ export class RelationshipService {
     }
 
     // Prevent self-relationships
-    if (createRelationshipDto.fromPersonId === createRelationshipDto.toPersonId) {
-      throw new BadRequestException('A person cannot have a relationship with themselves');
+    if (
+      createRelationshipDto.fromPersonId === createRelationshipDto.toPersonId
+    ) {
+      throw new BadRequestException(
+        'A person cannot have a relationship with themselves',
+      );
     }
 
     // Check for existing relationship
@@ -44,15 +63,21 @@ export class RelationshipService {
           toPersonId: createRelationshipDto.toPersonId,
           relationshipType: createRelationshipDto.relationshipType,
           customRelationshipName: createRelationshipDto.customRelationshipName,
-          startDate: createRelationshipDto.startDate ? new Date(createRelationshipDto.startDate) : undefined,
-          endDate: createRelationshipDto.endDate ? new Date(createRelationshipDto.endDate) : undefined,
+          startDate: createRelationshipDto.startDate
+            ? new Date(createRelationshipDto.startDate)
+            : undefined,
+          endDate: createRelationshipDto.endDate
+            ? new Date(createRelationshipDto.endDate)
+            : undefined,
           treeId: createRelationshipDto.treeId,
           notes: createRelationshipDto.notes,
         },
       });
 
       // Create inverse relationship automatically
-      const inverseType = this.getInverseRelationshipType(createRelationshipDto.relationshipType);
+      const inverseType = this.getInverseRelationshipType(
+        createRelationshipDto.relationshipType,
+      );
       if (inverseType) {
         await this.prisma.relationship.create({
           data: {
@@ -70,7 +95,7 @@ export class RelationshipService {
     }
   }
 
-  async findAll(treeId: string): Promise<Relationship[]> {
+  async findAll(treeId: string): Promise<RelationshipWithPeople[]> {
     return this.prisma.relationship.findMany({
       where: { treeId },
       include: {
@@ -80,13 +105,12 @@ export class RelationshipService {
     });
   }
 
-  async findPersonRelationships(personId: string): Promise<Relationship[]> {
+  async findPersonRelationships(
+    personId: string,
+  ): Promise<RelationshipWithPeople[]> {
     return this.prisma.relationship.findMany({
       where: {
-        OR: [
-          { fromPersonId: personId },
-          { toPersonId: personId },
-        ],
+        OR: [{ fromPersonId: personId }, { toPersonId: personId }],
       },
       include: {
         fromPerson: true,
@@ -111,7 +135,9 @@ export class RelationshipService {
       });
 
       // Also delete the inverse relationship if it exists
-      const inverseType = this.getInverseRelationshipType(relationship.relationshipType);
+      const inverseType = this.getInverseRelationshipType(
+        relationship.relationshipType,
+      );
       if (inverseType) {
         await this.prisma.relationship.deleteMany({
           where: {
@@ -130,7 +156,9 @@ export class RelationshipService {
     }
   }
 
-  private getInverseRelationshipType(type: RelationshipType): RelationshipType | null {
+  private getInverseRelationshipType(
+    type: RelationshipType,
+  ): RelationshipType | null {
     const inverseMap: Partial<Record<RelationshipType, RelationshipType>> = {
       [RelationshipType.PARENT]: RelationshipType.CHILD,
       [RelationshipType.CHILD]: RelationshipType.PARENT,
@@ -178,11 +206,55 @@ export class RelationshipService {
     relationshipType: RelationshipType,
   ): Promise<boolean> {
     // Check for circular relationships (e.g., A is parent of B, B is parent of A)
-    const existingRelationships = await this.findPersonRelationships(fromPersonId);
-    
-    // Add more validation logic here based on business rules
-    // For example, prevent someone from being their own ancestor
-    
-    return true; // Simplified for now
+    const existingRelationships =
+      await this.findPersonRelationships(fromPersonId);
+
+    // Check for conflicting relationships
+    const conflictingRelationship = existingRelationships.find(rel => {
+      const otherPersonId =
+        rel.fromPersonId === fromPersonId ? rel.toPersonId : rel.fromPersonId;
+      return (
+        otherPersonId === toPersonId &&
+        this.areRelationshipsConflicting(rel.relationshipType, relationshipType)
+      );
+    });
+
+    if (conflictingRelationship) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private areRelationshipsConflicting(
+    existing: RelationshipType,
+    proposed: RelationshipType,
+  ): boolean {
+    // Define conflicting relationship rules
+    const conflicts: Record<RelationshipType, RelationshipType[]> = {
+      [RelationshipType.PARENT]: [
+        RelationshipType.CHILD,
+        RelationshipType.SIBLING,
+        RelationshipType.SPOUSE,
+      ],
+      [RelationshipType.CHILD]: [
+        RelationshipType.PARENT,
+        RelationshipType.SIBLING,
+        RelationshipType.SPOUSE,
+      ],
+      [RelationshipType.SPOUSE]: [
+        RelationshipType.PARENT,
+        RelationshipType.CHILD,
+        RelationshipType.SIBLING,
+      ],
+      [RelationshipType.SIBLING]: [
+        RelationshipType.PARENT,
+        RelationshipType.CHILD,
+        RelationshipType.SPOUSE,
+      ],
+      // Add more conflict rules as needed
+    } as Record<RelationshipType, RelationshipType[]>;
+
+    return conflicts[existing]?.includes(proposed) || false;
   }
 }

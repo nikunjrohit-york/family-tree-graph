@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UserService {
@@ -8,7 +9,7 @@ export class UserService {
 
   async createFromSupabaseUser(supabaseUser: SupabaseUser) {
     const userData = supabaseUser.user_metadata || {};
-    
+
     return this.prisma.user.create({
       data: {
         id: supabaseUser.id,
@@ -16,9 +17,14 @@ export class UserService {
         firstName: userData.first_name || userData.firstName,
         lastName: userData.last_name || userData.lastName,
         username: userData.username,
-        fullName: userData.full_name || userData.fullName || 
-                 `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || null,
-        dateOfBirth: userData.date_of_birth ? new Date(userData.date_of_birth) : null,
+        fullName:
+          userData.full_name ||
+          userData.fullName ||
+          `${userData.first_name || ''} ${userData.last_name || ''}`.trim() ||
+          null,
+        dateOfBirth: userData.date_of_birth
+          ? new Date(userData.date_of_birth)
+          : null,
         phone: userData.phone,
         profilePicture: userData.avatar_url || userData.profilePicture,
         lastLoginAt: new Date(),
@@ -26,17 +32,21 @@ export class UserService {
     });
   }
 
-  async updateProfile(userId: string, updateData: {
-    firstName?: string;
-    lastName?: string;
-    username?: string;
-    phone?: string;
-    dateOfBirth?: Date;
-    profilePicture?: string;
-  }) {
-    const fullName = updateData.firstName && updateData.lastName 
-      ? `${updateData.firstName} ${updateData.lastName}` 
-      : undefined;
+  async updateProfile(
+    userId: string,
+    updateData: {
+      firstName?: string;
+      lastName?: string;
+      username?: string;
+      phone?: string;
+      dateOfBirth?: Date;
+      profilePicture?: string;
+    },
+  ) {
+    const fullName =
+      updateData.firstName && updateData.lastName
+        ? `${updateData.firstName} ${updateData.lastName}`
+        : undefined;
 
     return this.prisma.user.update({
       where: { id: userId },

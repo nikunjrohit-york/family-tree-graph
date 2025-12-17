@@ -1,13 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import * as fc from 'fast-check';
+
 import { PrismaService } from '../../prisma/prisma.service';
 import { PersonService } from '../person.service';
-import * as fc from 'fast-check';
-import { CreatePersonDto } from '@family-tree/shared';
-import { Gender, TreeType } from '@prisma/client';
+import { Gender } from '@family-tree/shared';
 
 describe('PersonService Property Tests', () => {
   let service: PersonService;
-  let prisma: PrismaService;
 
   // Mock Prisma service
   const mockPrismaService = {
@@ -39,7 +38,6 @@ describe('PersonService Property Tests', () => {
     }).compile();
 
     service = module.get<PersonService>(PersonService);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {
@@ -52,17 +50,15 @@ describe('PersonService Property Tests', () => {
     phone: fc.option(fc.string({ maxLength: 20 })),
     email: fc.option(fc.emailAddress()),
     address: fc.option(fc.string()),
-    birthDate: fc.option(fc.date().map(d => d.toISOString())),
-    gender: fc.option(fc.constantFrom(Gender.MALE, Gender.FEMALE, Gender.OTHER, Gender.PREFER_NOT_TO_SAY)),
+    birthDate: fc.option(fc.date()),
+    gender: fc.option(fc.constantFrom(...Object.values(Gender))),
     occupation: fc.option(fc.string({ maxLength: 255 })),
     notes: fc.option(fc.string()),
     relationshipToBride: fc.option(fc.string({ maxLength: 100 })),
     relationshipToGroom: fc.option(fc.string({ maxLength: 100 })),
     relationshipToOwner: fc.option(fc.string({ maxLength: 100 })),
-    position: fc.record({
-      x: fc.float(),
-      y: fc.float(),
-    }),
+    positionX: fc.float(),
+    positionY: fc.float(),
     treeId: fc.uuid(),
     isAlive: fc.boolean(),
     profilePicture: fc.option(fc.string()),
@@ -75,7 +71,7 @@ describe('PersonService Property Tests', () => {
     email: fc.option(fc.emailAddress()),
     address: fc.option(fc.string()),
     birthDate: fc.option(fc.date()),
-    gender: fc.option(fc.constantFrom(Gender.MALE, Gender.FEMALE, Gender.OTHER, Gender.PREFER_NOT_TO_SAY)),
+    gender: fc.option(fc.constantFrom(...Object.values(Gender))),
     occupation: fc.option(fc.string({ maxLength: 255 })),
     notes: fc.option(fc.string()),
     relationshipToBride: fc.option(fc.string({ maxLength: 100 })),
@@ -97,37 +93,43 @@ describe('PersonService Property Tests', () => {
    */
   it('should persist person creation data exactly as provided', async () => {
     await fc.assert(
-      fc.asyncProperty(validPersonDataGenerator, mockPersonGenerator, async (createData, mockResult) => {
-        // Setup mock to return the created person
-        mockPrismaService.person.create.mockResolvedValue(mockResult);
+      fc.asyncProperty(
+        validPersonDataGenerator,
+        mockPersonGenerator,
+        async (createData, mockResult) => {
+          // Setup mock to return the created person
+          mockPrismaService.person.create.mockResolvedValue(mockResult);
 
-        // Act
-        const result = await service.create(createData as any);
+          // Act
+          const result = await service.create(createData);
 
-        // Assert
-        expect(mockPrismaService.person.create).toHaveBeenCalledWith({
-          data: expect.objectContaining({
-            name: createData.name,
-            phone: createData.phone,
-            email: createData.email,
-            address: createData.address,
-            birthDate: createData.birthDate ? new Date(createData.birthDate) : undefined,
-            gender: createData.gender,
-            occupation: createData.occupation,
-            notes: createData.notes,
-            relationshipToBride: createData.relationshipToBride,
-            relationshipToGroom: createData.relationshipToGroom,
-            relationshipToOwner: createData.relationshipToOwner,
-            positionX: createData.position.x,
-            positionY: createData.position.y,
-            treeId: createData.treeId,
-            isAlive: createData.isAlive,
-            profilePicture: createData.profilePicture,
-          }),
-        });
-        expect(result).toEqual(mockResult);
-      }),
-      { numRuns: 100 }
+          // Assert
+          expect(mockPrismaService.person.create).toHaveBeenCalledWith({
+            data: expect.objectContaining({
+              name: createData.name,
+              phone: createData.phone,
+              email: createData.email,
+              address: createData.address,
+              birthDate: createData.birthDate
+                ? new Date(createData.birthDate)
+                : undefined,
+              gender: createData.gender,
+              occupation: createData.occupation,
+              notes: createData.notes,
+              relationshipToBride: createData.relationshipToBride,
+              relationshipToGroom: createData.relationshipToGroom,
+              relationshipToOwner: createData.relationshipToOwner,
+              positionX: createData.positionX,
+              positionY: createData.positionY,
+              treeId: createData.treeId,
+              isAlive: createData.isAlive,
+              profilePicture: createData.profilePicture,
+            }),
+          });
+          expect(result).toEqual(mockResult);
+        },
+      ),
+      { numRuns: 100 },
     );
   });
 
@@ -147,7 +149,7 @@ describe('PersonService Property Tests', () => {
           mockPrismaService.person.update.mockResolvedValue(mockResult);
 
           // Act
-          const result = await service.update(personId, updateData as any);
+          const result = await service.update(personId, updateData);
 
           // Assert
           expect(mockPrismaService.person.update).toHaveBeenCalledWith({
@@ -157,23 +159,25 @@ describe('PersonService Property Tests', () => {
               phone: updateData.phone,
               email: updateData.email,
               address: updateData.address,
-              birthDate: updateData.birthDate ? new Date(updateData.birthDate) : undefined,
+              birthDate: updateData.birthDate
+                ? new Date(updateData.birthDate)
+                : undefined,
               gender: updateData.gender,
               occupation: updateData.occupation,
               notes: updateData.notes,
               relationshipToBride: updateData.relationshipToBride,
               relationshipToGroom: updateData.relationshipToGroom,
               relationshipToOwner: updateData.relationshipToOwner,
-              positionX: updateData.position?.x,
-              positionY: updateData.position?.y,
+              positionX: updateData.positionX,
+              positionY: updateData.positionY,
               isAlive: updateData.isAlive,
               profilePicture: updateData.profilePicture,
             }),
           });
           expect(result).toEqual(mockResult);
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     );
   });
 
@@ -184,7 +188,7 @@ describe('PersonService Property Tests', () => {
    */
   it('should cascade delete person and all associated relationships', async () => {
     await fc.assert(
-      fc.asyncProperty(fc.uuid(), async (personId) => {
+      fc.asyncProperty(fc.uuid(), async personId => {
         // Setup mock to simulate successful deletion
         mockPrismaService.person.delete.mockResolvedValue(undefined);
 
@@ -196,7 +200,7 @@ describe('PersonService Property Tests', () => {
           where: { id: personId },
         });
       }),
-      { numRuns: 100 }
+      { numRuns: 100 },
     );
   });
 
@@ -216,18 +220,20 @@ describe('PersonService Property Tests', () => {
           }),
           treeId: fc.uuid(),
         }),
-        async (invalidData) => {
+        async invalidData => {
           // Setup mock to throw error for invalid data
-          mockPrismaService.person.create.mockRejectedValue(new Error('Validation failed'));
+          mockPrismaService.person.create.mockRejectedValue(
+            new Error('Validation failed'),
+          );
 
           // Act & Assert
-          await expect(service.create(invalidData as any)).rejects.toThrow();
-          
+          await expect(service.create(invalidData)).rejects.toThrow();
+
           // Verify that no person was created in the database
           expect(mockPrismaService.person.create).toHaveBeenCalled();
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     );
   });
 });

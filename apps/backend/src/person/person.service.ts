@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { CreatePersonDto, UpdatePersonDto } from '@family-tree/shared';
-import { Person, Relationship, RelationshipType } from '@prisma/client';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+
+import { PrismaService } from '../prisma/prisma.service';
+import { Person, Relationship, RelationshipType } from '../types/prisma.types';
 
 @Injectable()
 export class PersonService {
@@ -15,15 +20,17 @@ export class PersonService {
           phone: createPersonDto.phone,
           email: createPersonDto.email,
           address: createPersonDto.address,
-          birthDate: createPersonDto.birthDate ? new Date(createPersonDto.birthDate) : undefined,
+          birthDate: createPersonDto.birthDate
+            ? new Date(createPersonDto.birthDate)
+            : undefined,
           gender: createPersonDto.gender,
           occupation: createPersonDto.occupation,
           notes: createPersonDto.notes,
           relationshipToBride: createPersonDto.relationshipToBride,
           relationshipToGroom: createPersonDto.relationshipToGroom,
           relationshipToOwner: createPersonDto.relationshipToOwner,
-          positionX: createPersonDto.position.x,
-          positionY: createPersonDto.position.y,
+          positionX: createPersonDto.positionX,
+          positionY: createPersonDto.positionY,
           treeId: createPersonDto.treeId,
           isAlive: createPersonDto.isAlive,
           profilePicture: createPersonDto.profilePicture,
@@ -64,15 +71,17 @@ export class PersonService {
           phone: updatePersonDto.phone,
           email: updatePersonDto.email,
           address: updatePersonDto.address,
-          birthDate: updatePersonDto.birthDate ? new Date(updatePersonDto.birthDate) : undefined,
+          birthDate: updatePersonDto.birthDate
+            ? new Date(updatePersonDto.birthDate)
+            : undefined,
           gender: updatePersonDto.gender,
           occupation: updatePersonDto.occupation,
           notes: updatePersonDto.notes,
           relationshipToBride: updatePersonDto.relationshipToBride,
           relationshipToGroom: updatePersonDto.relationshipToGroom,
           relationshipToOwner: updatePersonDto.relationshipToOwner,
-          positionX: updatePersonDto.position?.x,
-          positionY: updatePersonDto.position?.y,
+          positionX: updatePersonDto.positionX,
+          positionY: updatePersonDto.positionY,
           isAlive: updatePersonDto.isAlive,
           profilePicture: updatePersonDto.profilePicture,
         },
@@ -100,7 +109,7 @@ export class PersonService {
     newPersonData: CreatePersonDto,
   ): Promise<{ person: Person; relationship: Relationship }> {
     const existingPerson = await this.findOne(personId);
-    
+
     // Create the new person
     const newPerson = await this.create(newPersonData);
 
@@ -130,21 +139,22 @@ export class PersonService {
     return { person: newPerson, relationship };
   }
 
-  private getInverseRelationshipType(type: RelationshipType): RelationshipType | null {
-    const inverseMap: Record<RelationshipType, RelationshipType> = {
+  private getInverseRelationshipType(
+    type: RelationshipType,
+  ): RelationshipType | null {
+    const inverseMap: Partial<Record<RelationshipType, RelationshipType>> = {
       [RelationshipType.PARENT]: RelationshipType.CHILD,
       [RelationshipType.CHILD]: RelationshipType.PARENT,
       [RelationshipType.SIBLING]: RelationshipType.SIBLING,
       [RelationshipType.SPOUSE]: RelationshipType.SPOUSE,
       [RelationshipType.GRANDPARENT]: RelationshipType.GRANDCHILD,
       [RelationshipType.GRANDCHILD]: RelationshipType.GRANDPARENT,
-      [RelationshipType.AUNT]: RelationshipType.NIECE, // Assuming female
-      [RelationshipType.UNCLE]: RelationshipType.NEPHEW, // Assuming male
-      [RelationshipType.NIECE]: RelationshipType.AUNT, // Assuming aunt
-      [RelationshipType.NEPHEW]: RelationshipType.UNCLE, // Assuming uncle
+      [RelationshipType.AUNT]: RelationshipType.NIECE,
+      [RelationshipType.UNCLE]: RelationshipType.NEPHEW,
+      [RelationshipType.NIECE]: RelationshipType.AUNT,
+      [RelationshipType.NEPHEW]: RelationshipType.UNCLE,
       [RelationshipType.COUSIN]: RelationshipType.COUSIN,
-      // Add more mappings as needed
-    } as any;
+    };
 
     return inverseMap[type] || null;
   }

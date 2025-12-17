@@ -1,3 +1,4 @@
+import { CreatePersonDto, UpdatePersonDto } from '@family-tree/shared';
 import {
   Controller,
   Get,
@@ -11,9 +12,9 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { PersonService } from './person.service';
-import { CreatePersonDto, UpdatePersonDto } from '@family-tree/shared';
 import { RelationshipType } from '@prisma/client';
+
+import { PersonService } from './person.service';
 
 @ApiTags('people')
 @Controller('people')
@@ -37,7 +38,10 @@ export class PersonController {
 
   @Get('search')
   @ApiOperation({ summary: 'Search people by name, email, or occupation' })
-  @ApiResponse({ status: 200, description: 'Search results retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Search results retrieved successfully',
+  })
   search(@Query('treeId') treeId: string, @Query('q') query: string) {
     return this.personService.searchPeople(treeId, query);
   }
@@ -73,7 +77,11 @@ export class PersonController {
   @ApiResponse({ status: 404, description: 'Person not found' })
   addFamilyMember(
     @Param('id') personId: string,
-    @Body() body: { relationshipType: RelationshipType; newPersonData: CreatePersonDto },
+    @Body()
+    body: {
+      relationshipType: RelationshipType;
+      newPersonData: CreatePersonDto;
+    },
   ) {
     return this.personService.addFamilyMemberFromNode(
       personId,

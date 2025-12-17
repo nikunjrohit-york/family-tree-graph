@@ -1,3 +1,4 @@
+import { CreateRelationshipDto } from '@family-tree/shared';
 import {
   Controller,
   Get,
@@ -10,8 +11,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+
 import { RelationshipService } from './relationship.service';
-import { CreateRelationshipDto } from '@family-tree/shared';
 
 @ApiTags('relationships')
 @Controller('relationships')
@@ -20,7 +21,10 @@ export class RelationshipController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new relationship' })
-  @ApiResponse({ status: 201, description: 'Relationship created successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'Relationship created successfully',
+  })
   @ApiResponse({ status: 400, description: 'Bad request' })
   create(@Body() createRelationshipDto: CreateRelationshipDto) {
     return this.relationshipService.create(createRelationshipDto);
@@ -28,14 +32,20 @@ export class RelationshipController {
 
   @Get()
   @ApiOperation({ summary: 'Get all relationships in a family tree' })
-  @ApiResponse({ status: 200, description: 'Relationships retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Relationships retrieved successfully',
+  })
   findAll(@Query('treeId') treeId: string) {
     return this.relationshipService.findAll(treeId);
   }
 
   @Get('person/:personId')
   @ApiOperation({ summary: 'Get all relationships for a specific person' })
-  @ApiResponse({ status: 200, description: 'Person relationships retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Person relationships retrieved successfully',
+  })
   findPersonRelationships(@Param('personId') personId: string) {
     return this.relationshipService.findPersonRelationships(personId);
   }
@@ -43,7 +53,10 @@ export class RelationshipController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a relationship' })
-  @ApiResponse({ status: 204, description: 'Relationship deleted successfully' })
+  @ApiResponse({
+    status: 204,
+    description: 'Relationship deleted successfully',
+  })
   @ApiResponse({ status: 404, description: 'Relationship not found' })
   remove(@Param('id') id: string) {
     return this.relationshipService.remove(id);

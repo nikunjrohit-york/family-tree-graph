@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { RelationshipService } from './relationship.service';
+
 import { RelationshipController } from './relationship.controller';
+import { RelationshipService } from './relationship.service';
 
 @Module({
   controllers: [RelationshipController],

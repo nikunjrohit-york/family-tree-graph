@@ -1,9 +1,16 @@
 import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { UserService } from './user.service';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
+
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
+import { UserService } from './user.service';
 
 @ApiTags('user')
 @Controller('user')
