@@ -7,9 +7,27 @@
     "start": "turbo start",
     "lint": "turbo lint",
     "test": "turbo test",
-    "clean": "turbo clean"
+    "clean": "turbo clean",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "apps/frontend/**/*.{ts,tsx}": [
+      "prettier --write"
+    ],
+    "apps/backend/**/*.ts": [
+      "prettier --write"
+    ],
+    "packages/shared/**/*.ts": [
+      "prettier --write"
+    ],
+    "**/*.{json,md}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "turbo": "^1.10.12"
   },
   "packageManager": "npm@9.0.0",
