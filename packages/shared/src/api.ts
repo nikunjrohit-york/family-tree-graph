@@ -1,5 +1,18 @@
-import { Person, Relationship, FamilyTree, FamilyTreeStats, FamilyInsights, RelationshipPath } from './types';
-import { CreatePersonDto, UpdatePersonDto, CreateRelationshipDto, CreateFamilyTreeDto, UpdateFamilyTreeDto } from './validation';
+import {
+  Person,
+  Relationship,
+  FamilyTree,
+  FamilyTreeStats,
+  FamilyInsights,
+  RelationshipPath,
+} from "./types";
+import {
+  CreatePersonDto,
+  UpdatePersonDto,
+  CreateRelationshipDto,
+  CreateFamilyTreeDto,
+  UpdateFamilyTreeDto,
+} from "./dto";
 
 // Person Management API
 export interface PersonAPI {
@@ -11,7 +24,7 @@ export interface PersonAPI {
   addFamilyMemberFromNode(
     personId: string,
     relationshipType: string,
-    newPersonData: CreatePersonDto
+    newPersonData: CreatePersonDto,
   ): Promise<{ person: Person; relationship: Relationship }>;
 }
 
@@ -38,6 +51,6 @@ export interface FamilyAnalyticsAPI {
   getFamilyInsights(treeId: string): Promise<FamilyInsights>;
   getRelationshipPath(
     fromPersonId: string,
-    toPersonId: string
+    toPersonId: string,
   ): Promise<RelationshipPath>;
 }

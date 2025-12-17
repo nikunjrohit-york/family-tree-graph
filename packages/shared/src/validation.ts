@@ -1,10 +1,10 @@
-import { z } from 'zod';
-import { Gender, TreeType, RelationshipType } from './types';
+import { z } from "zod";
+import { Gender, TreeType, RelationshipType } from "./types";
 
 export const CreatePersonSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(255),
+  name: z.string().min(1, "Name is required").max(255),
   phone: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
+  email: z.string().email().optional().or(z.literal("")),
   address: z.string().optional(),
   birthDate: z.string().datetime().optional(),
   gender: z.nativeEnum(Gender).optional(),
@@ -13,16 +13,16 @@ export const CreatePersonSchema = z.object({
   relationshipToBride: z.string().optional(),
   relationshipToGroom: z.string().optional(),
   relationshipToOwner: z.string().optional(),
-  position: z.object({
-    x: z.number(),
-    y: z.number(),
-  }),
+  positionX: z.number().optional(),
+  positionY: z.number().optional(),
   treeId: z.string().uuid(),
   isAlive: z.boolean().default(true),
   profilePicture: z.string().optional(),
 });
 
-export const UpdatePersonSchema = CreatePersonSchema.partial().omit({ treeId: true });
+export const UpdatePersonSchema = CreatePersonSchema.partial().omit({
+  treeId: true,
+});
 
 export const CreateRelationshipSchema = z.object({
   fromPersonId: z.string().uuid(),
@@ -36,7 +36,7 @@ export const CreateRelationshipSchema = z.object({
 });
 
 export const CreateFamilyTreeSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(255),
+  name: z.string().min(1, "Name is required").max(255),
   description: z.string().optional(),
   ownerName: z.string().optional(),
   treeType: z.nativeEnum(TreeType).default(TreeType.FAMILY_TREE),
@@ -44,8 +44,11 @@ export const CreateFamilyTreeSchema = z.object({
 
 export const UpdateFamilyTreeSchema = CreateFamilyTreeSchema.partial();
 
-export type CreatePersonDto = z.infer<typeof CreatePersonSchema>;
-export type UpdatePersonDto = z.infer<typeof UpdatePersonSchema>;
-export type CreateRelationshipDto = z.infer<typeof CreateRelationshipSchema>;
-export type CreateFamilyTreeDto = z.infer<typeof CreateFamilyTreeSchema>;
-export type UpdateFamilyTreeDto = z.infer<typeof UpdateFamilyTreeSchema>;
+// Zod inferred types (for internal validation use)
+export type CreatePersonValidation = z.infer<typeof CreatePersonSchema>;
+export type UpdatePersonValidation = z.infer<typeof UpdatePersonSchema>;
+export type CreateRelationshipValidation = z.infer<
+  typeof CreateRelationshipSchema
+>;
+export type CreateFamilyTreeValidation = z.infer<typeof CreateFamilyTreeSchema>;
+export type UpdateFamilyTreeValidation = z.infer<typeof UpdateFamilyTreeSchema>;

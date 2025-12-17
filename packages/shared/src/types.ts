@@ -85,7 +85,8 @@ export interface Person {
   relationshipToBride?: string;
   relationshipToGroom?: string;
   relationshipToOwner?: string;
-  position: { x: number; y: number };
+  positionX: number;
+  positionY: number;
   treeId: string;
   isAlive: boolean;
   profilePicture?: string;
@@ -124,7 +125,7 @@ export interface FamilyTreeStats {
   totalRelationships: number;
   generations: number;
   averageRelationshipsPerPerson: number;
-  relationshipTypeBreakdown: Record<RelationshipType, number>;
+  relationshipTypeBreakdown: Record<string, number>;
 }
 
 export interface FamilyInsights {
