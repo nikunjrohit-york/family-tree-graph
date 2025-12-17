@@ -2,24 +2,30 @@ import { useState, useEffect } from "react";
 import { familyTreeApi, personApi } from "../services/api";
 import { FamilyTree, Person } from "@family-tree/shared";
 
-export default function FamilyTreeDemo() {
-  const [familyTrees, setFamilyTrees] = useState<FamilyTree[]>([]);
+interface FamilyTreeDemoProps {
+  treeId: string;
+}
+
+export default function FamilyTreeDemo({ treeId }: FamilyTreeDemoProps) {
   const [selectedTree, setSelectedTree] = useState<FamilyTree | null>(null);
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadFamilyTrees();
-  }, []);
+    if (treeId) {
+      loadFamilyTree(treeId);
+      loadPeople(treeId);
+    }
+  }, [treeId]);
 
-  const loadFamilyTrees = async () => {
+  const loadFamilyTree = async (id: string) => {
     try {
       setLoading(true);
-      const trees = await familyTreeApi.getAll();
-      setFamilyTrees(trees);
+      const tree = await familyTreeApi.getById(id);
+      setSelectedTree(tree);
     } catch (err) {
-      setError("Failed to load family trees");
+      setError("Failed to load family tree");
       console.error(err);
     } finally {
       setLoading(false);
@@ -58,7 +64,7 @@ export default function FamilyTreeDemo() {
         isAlive: true,
       });
 
-      await loadFamilyTrees();
+      // Tree will be reloaded by parent component
       setSelectedTree(newTree);
       await loadPeople(newTree.id);
     } catch (err) {
@@ -96,7 +102,7 @@ export default function FamilyTreeDemo() {
             Create Sample Tree
           </button>
           <button
-            onClick={loadFamilyTrees}
+            onClick={() => window.location.reload()}
             className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
           >
             Refresh Trees
@@ -105,38 +111,24 @@ export default function FamilyTreeDemo() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Family Trees */}
+        {/* Current Family Tree */}
         <div>
-          <h3 className="text-xl font-semibold mb-3">
-            Family Trees ({familyTrees.length})
-          </h3>
-          <div className="space-y-2">
-            {familyTrees.map((tree) => (
-              <div
-                key={tree.id}
-                className={`p-3 border rounded cursor-pointer transition-colors ${
-                  selectedTree?.id === tree.id
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-300 hover:border-gray-400"
-                }`}
-                onClick={() => {
-                  setSelectedTree(tree);
-                  loadPeople(tree.id);
-                }}
-              >
-                <div className="font-medium">{tree.name}</div>
-                <div className="text-sm text-gray-600">{tree.description}</div>
-                <div className="text-xs text-gray-500">
-                  Owner: {tree.ownerName || "Unknown"}
-                </div>
+          <h3 className="text-xl font-semibold mb-3">Current Family Tree</h3>
+          {selectedTree ? (
+            <div className="p-3 border border-blue-500 bg-blue-50 rounded">
+              <div className="font-medium">{selectedTree.name}</div>
+              <div className="text-sm text-gray-600">
+                {selectedTree.description}
               </div>
-            ))}
-            {familyTrees.length === 0 && (
-              <div className="text-gray-500 text-center py-4">
-                No family trees found. Create one to get started!
+              <div className="text-xs text-gray-500">
+                Owner: {selectedTree.ownerName || "Unknown"}
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="text-gray-500 text-center py-4">
+              Loading family tree...
+            </div>
+          )}
         </div>
 
         {/* People */}

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Person, Relationship, FamilyTree, CreatePersonDto, CreateRelationshipDto, CreateFamilyTreeDto } from '@family-tree/shared';
+import { supabase } from '../lib/supabase';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -8,6 +9,15 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+// Add auth interceptor
+api.interceptors.request.use(async (config) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.access_token) {
+    config.headers.Authorization = `Bearer ${session.access_token}`;
+  }
+  return config;
 });
 
 // Family Tree API
@@ -97,6 +107,27 @@ export const relationshipApi = {
 
   async delete(id: string): Promise<void> {
     await api.delete(`/relationships/${id}`);
+  },
+};
+
+// Auth API
+export const authApi = {
+  async getCurrentUser() {
+    const response = await api.get('/auth/me');
+    return response.data;
+  },
+};
+
+// User API
+export const userApi = {
+  async getProfile() {
+    const response = await api.get('/user/profile');
+    return response.data;
+  },
+
+  async updateProfile(data: any) {
+    const response = await api.put('/user/profile', data);
+    return response.data;
   },
 };
 

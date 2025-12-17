@@ -7,7 +7,7 @@ import { FamilyTree } from '@prisma/client';
 export class FamilyTreeService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createFamilyTreeDto: CreateFamilyTreeDto): Promise<FamilyTree> {
+  async create(createFamilyTreeDto: CreateFamilyTreeDto, userId: string): Promise<any> {
     try {
       const familyTree = await this.prisma.familyTree.create({
         data: {
@@ -15,6 +15,7 @@ export class FamilyTreeService {
           description: createFamilyTreeDto.description,
           ownerName: createFamilyTreeDto.ownerName,
           treeType: createFamilyTreeDto.treeType,
+          userId: userId,
         },
       });
 
@@ -24,23 +25,73 @@ export class FamilyTreeService {
     }
   }
 
-  async findAll(): Promise<FamilyTree[]> {
+  async findAll(userId: string): Promise<any[]> {
     return this.prisma.familyTree.findMany({
+      where: {
+        OR: [
+          { userId: userId }, // Trees owned by user
+          { sharedWith: { some: { userId: userId } } }, // Trees shared with user
+          { isPublic: true }, // Public trees
+        ],
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: {
+            people: true,
+            relationships: true,
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findOne(id: string): Promise<FamilyTree> {
-    const familyTree = await this.prisma.familyTree.findUnique({
-      where: { id },
+  async findOne(id: string, userId: string): Promise<any> {
+    const familyTree = await this.prisma.familyTree.findFirst({
+      where: {
+        id,
+        OR: [
+          { userId: userId }, // User owns the tree
+          { sharedWith: { some: { userId: userId } } }, // Tree is shared with user
+          { isPublic: true }, // Tree is public
+        ],
+      },
       include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
         people: true,
         relationships: true,
+        sharedWith: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
     });
 
     if (!familyTree) {
-      throw new NotFoundException(`Family tree with ID ${id} not found`);
+      throw new NotFoundException(`Family tree with ID ${id} not found or access denied`);
     }
 
     return familyTree;

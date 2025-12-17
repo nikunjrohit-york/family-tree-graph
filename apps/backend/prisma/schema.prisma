@@ -11,20 +11,62 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique @db.VarChar(255)
+  firstName     String?   @map("first_name") @db.VarChar(100)
+  lastName      String?   @map("last_name") @db.VarChar(100)
+  username      String?   @unique @db.VarChar(50)
+  fullName      String?   @map("full_name") @db.VarChar(255)
+  dateOfBirth   DateTime? @map("date_of_birth") @db.Date
+  phone         String?   @db.VarChar(20)
+  profilePicture String?  @map("profile_picture")
+  isActive      Boolean   @default(true) @map("is_active")
+  lastLoginAt   DateTime? @map("last_login_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  familyTrees   FamilyTree[]
+  sharedTrees   FamilyTreeShare[]
+
+  @@map("users")
+}
+
 model FamilyTree {
   id          String   @id @default(uuid())
   name        String   @db.VarChar(255)
   description String?
   ownerName   String?  @map("owner_name") @db.VarChar(255)
   treeType    TreeType @default(FAMILY_TREE) @map("tree_type")
+  userId      String   @map("user_id") // Owner of the family tree
+  isPublic    Boolean  @default(false) @map("is_public")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   people        Person[]
   relationships Relationship[]
+  sharedWith    FamilyTreeShare[]
 
   @@map("family_trees")
+}
+
+model FamilyTreeShare {
+  id           String              @id @default(uuid())
+  treeId       String              @map("tree_id")
+  userId       String              @map("user_id")
+  permission   FamilyTreePermission @default(VIEW)
+  sharedAt     DateTime            @default(now()) @map("shared_at")
+  sharedBy     String              @map("shared_by") // User ID who shared it
+
+  // Relations
+  familyTree   FamilyTree          @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([treeId, userId])
+  @@map("family_tree_shares")
 }
 
 model Person {
@@ -85,6 +127,12 @@ enum TreeType {
   WEDDING_GUESTS
   SOCIAL_NETWORK
   CUSTOM
+}
+
+enum FamilyTreePermission {
+  VIEW
+  EDIT
+  ADMIN
 }
 
 enum Gender {
