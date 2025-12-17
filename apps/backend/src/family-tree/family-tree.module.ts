@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { FamilyTreeService } from './family-tree.service';
+
 import { FamilyTreeController } from './family-tree.controller';
+import { FamilyTreeService } from './family-tree.service';
 
 @Module({
   controllers: [FamilyTreeController],

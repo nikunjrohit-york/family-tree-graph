@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
 import { PrismaService } from '../prisma/prisma.service';
 import { UserService } from '../user/user.service';
 
@@ -19,8 +20,11 @@ export class AuthService {
 
   async validateUser(token: string) {
     try {
-      const { data: { user }, error } = await this.supabase.auth.getUser(token);
-      
+      const {
+        data: { user },
+        error,
+      } = await this.supabase.auth.getUser(token);
+
       if (error || !user) {
         throw new UnauthorizedException('Invalid token');
       }
