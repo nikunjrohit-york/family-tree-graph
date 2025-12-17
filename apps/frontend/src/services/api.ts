@@ -1,10 +1,28 @@
-import axios from 'axios';
-import { Person, Relationship, FamilyTree, CreatePersonDto, CreateRelationshipDto, CreateFamilyTreeDto } from '@family-tree/shared';
+import axios, { type AxiosResponse } from 'axios';
+
 import { supabase } from '../lib/supabase';
+import type {
+  FamilyTree,
+  CreateFamilyTreeDto,
+  UpdateFamilyTreeDto,
+  FamilyTreeStats,
+  FamilyInsights,
+  Person,
+  CreatePersonDto,
+  UpdatePersonDto,
+  Relationship,
+  CreateRelationshipDto,
+  RelationshipType,
+  User,
+  UpdateUserProfileDto,
+  ApiError,
+} from '../types/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL as string) ?? 'http://localhost:3001/api';
 
-const api = axios.create({
+// Create axios instance
+const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -12,123 +30,156 @@ const api = axios.create({
 });
 
 // Add auth interceptor
-api.interceptors.request.use(async (config) => {
-  const { data: { session } } = await supabase.auth.getSession();
+apiClient.interceptors.request.use(async config => {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
   if (session?.access_token) {
     config.headers.Authorization = `Bearer ${session.access_token}`;
   }
+
   return config;
 });
 
-// Family Tree API
-export const familyTreeApi = {
-  async getAll(): Promise<FamilyTree[]> {
-    const response = await api.get('/family-trees');
-    return response.data;
+// Response interceptor for error handling
+apiClient.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  (error: unknown) => {
+    const axiosError = error as {
+      response?: {
+        status?: number;
+        data?: { message?: string; error?: string };
+      };
+      message?: string;
+    };
+
+    if (axiosError.response?.status === 401) {
+      // Handle unauthorized - redirect to login
+      window.location.href = '/login';
+    }
+
+    // Transform error to our ApiError type
+    const apiError: ApiError = {
+      message:
+        axiosError.response?.data?.message ??
+        axiosError.message ??
+        'An error occurred',
+      statusCode: axiosError.response?.status ?? 500,
+      error: axiosError.response?.data?.error,
+    };
+
+    return Promise.reject(new Error(JSON.stringify(apiError)));
+  }
+);
+
+// Helper function to extract data from response
+const extractData = <T>(response: AxiosResponse<T>): T => response.data;
+
+export const api = {
+  // Family Tree endpoints
+  familyTree: {
+    getAll: (): Promise<FamilyTree[]> =>
+      apiClient.get<FamilyTree[]>('/family-trees').then(extractData),
+
+    getById: (id: string): Promise<FamilyTree> =>
+      apiClient.get<FamilyTree>(`/family-trees/${id}`).then(extractData),
+
+    create: (data: CreateFamilyTreeDto): Promise<FamilyTree> =>
+      apiClient.post<FamilyTree>('/family-trees', data).then(extractData),
+
+    update: (id: string, data: UpdateFamilyTreeDto): Promise<FamilyTree> =>
+      apiClient
+        .patch<FamilyTree>(`/family-trees/${id}`, data)
+        .then(extractData),
+
+    delete: (id: string): Promise<void> =>
+      apiClient.delete(`/family-trees/${id}`).then(() => undefined),
+
+    getStats: (id: string): Promise<FamilyTreeStats> =>
+      apiClient
+        .get<FamilyTreeStats>(`/family-trees/${id}/stats`)
+        .then(extractData),
+
+    getInsights: (id: string): Promise<FamilyInsights> =>
+      apiClient
+        .get<FamilyInsights>(`/family-trees/${id}/insights`)
+        .then(extractData),
   },
 
-  async getById(id: string): Promise<FamilyTree> {
-    const response = await api.get(`/family-trees/${id}`);
-    return response.data;
+  // Person endpoints
+  person: {
+    getAll: (treeId: string): Promise<Person[]> =>
+      apiClient.get<Person[]>(`/people?treeId=${treeId}`).then(extractData),
+
+    getById: (id: string): Promise<Person> =>
+      apiClient.get<Person>(`/people/${id}`).then(extractData),
+
+    create: (data: CreatePersonDto): Promise<Person> =>
+      apiClient.post<Person>('/people', data).then(extractData),
+
+    update: (id: string, data: UpdatePersonDto): Promise<Person> =>
+      apiClient.patch<Person>(`/people/${id}`, data).then(extractData),
+
+    delete: (id: string): Promise<void> =>
+      apiClient.delete(`/people/${id}`).then(() => undefined),
+
+    search: (treeId: string, query: string): Promise<Person[]> =>
+      apiClient
+        .get<
+          Person[]
+        >(`/people/search?treeId=${treeId}&q=${encodeURIComponent(query)}`)
+        .then(extractData),
+
+    addFamilyMember: (
+      personId: string,
+      relationshipType: RelationshipType,
+      newPersonData: CreatePersonDto
+    ): Promise<{ person: Person; relationship: Relationship }> =>
+      apiClient
+        .post<{ person: Person; relationship: Relationship }>(
+          `/people/${personId}/family-member`,
+          {
+            relationshipType,
+            newPersonData,
+          }
+        )
+        .then(extractData),
   },
 
-  async create(data: CreateFamilyTreeDto): Promise<FamilyTree> {
-    const response = await api.post('/family-trees', data);
-    return response.data;
+  // Relationship endpoints
+  relationship: {
+    getAll: (treeId: string): Promise<Relationship[]> =>
+      apiClient
+        .get<Relationship[]>(`/relationships?treeId=${treeId}`)
+        .then(extractData),
+
+    getByPersonId: (personId: string): Promise<Relationship[]> =>
+      apiClient
+        .get<Relationship[]>(`/relationships/person/${personId}`)
+        .then(extractData),
+
+    create: (data: CreateRelationshipDto): Promise<Relationship> =>
+      apiClient.post<Relationship>('/relationships', data).then(extractData),
+
+    delete: (id: string): Promise<void> =>
+      apiClient.delete(`/relationships/${id}`).then(() => undefined),
   },
 
-  async getStats(id: string) {
-    const response = await api.get(`/family-trees/${id}/stats`);
-    return response.data;
-  },
+  // User endpoints
+  user: {
+    getProfile: (): Promise<User> =>
+      apiClient.get<User>('/user/profile').then(extractData),
 
-  async getInsights(id: string) {
-    const response = await api.get(`/family-trees/${id}/insights`);
-    return response.data;
+    updateProfile: (data: UpdateUserProfileDto): Promise<User> =>
+      apiClient.put<User>('/user/profile', data).then(extractData),
   },
 };
 
-// Person API
-export const personApi = {
-  async getAll(treeId: string): Promise<Person[]> {
-    const response = await api.get(`/people?treeId=${treeId}`);
-    return response.data;
-  },
+// Legacy exports for backward compatibility
+export const familyTreeApi = api.familyTree;
+export const personApi = api.person;
+export const relationshipApi = api.relationship;
+export const userApi = api.user;
 
-  async getById(id: string): Promise<Person> {
-    const response = await api.get(`/people/${id}`);
-    return response.data;
-  },
-
-  async create(data: CreatePersonDto): Promise<Person> {
-    const response = await api.post('/people', data);
-    return response.data;
-  },
-
-  async update(id: string, data: Partial<CreatePersonDto>): Promise<Person> {
-    const response = await api.patch(`/people/${id}`, data);
-    return response.data;
-  },
-
-  async delete(id: string): Promise<void> {
-    await api.delete(`/people/${id}`);
-  },
-
-  async search(treeId: string, query: string): Promise<Person[]> {
-    const response = await api.get(`/people/search?treeId=${treeId}&q=${query}`);
-    return response.data;
-  },
-
-  async addFamilyMember(personId: string, relationshipType: string, newPersonData: CreatePersonDto) {
-    const response = await api.post(`/people/${personId}/family-member`, {
-      relationshipType,
-      newPersonData,
-    });
-    return response.data;
-  },
-};
-
-// Relationship API
-export const relationshipApi = {
-  async getAll(treeId: string): Promise<Relationship[]> {
-    const response = await api.get(`/relationships?treeId=${treeId}`);
-    return response.data;
-  },
-
-  async getByPersonId(personId: string): Promise<Relationship[]> {
-    const response = await api.get(`/relationships/person/${personId}`);
-    return response.data;
-  },
-
-  async create(data: CreateRelationshipDto): Promise<Relationship> {
-    const response = await api.post('/relationships', data);
-    return response.data;
-  },
-
-  async delete(id: string): Promise<void> {
-    await api.delete(`/relationships/${id}`);
-  },
-};
-
-// Auth API
-export const authApi = {
-  async getCurrentUser() {
-    const response = await api.get('/auth/me');
-    return response.data;
-  },
-};
-
-// User API
-export const userApi = {
-  async getProfile() {
-    const response = await api.get('/user/profile');
-    return response.data;
-  },
-
-  async updateProfile(data: any) {
-    const response = await api.put('/user/profile', data);
-    return response.data;
-  },
-};
-
-export default api;
+export default apiClient;
