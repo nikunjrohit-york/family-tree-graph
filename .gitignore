@@ -230,3 +230,4 @@ temp/
 
 # Frontend documents files
 apps/frontend/docs/*
+apps/backend/docs/*
