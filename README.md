@@ -81,25 +81,41 @@ family-tree-graph/
 
 3. **Set up environment variables**
 
-   Copy the example environment file:
+   **Backend Environment:**
 
    ```bash
    cp apps/backend/.env.example apps/backend/.env
    ```
 
-   Update `apps/backend/.env` with your database credentials:
+   Update `apps/backend/.env` with your Supabase credentials:
 
    ```env
-   # For Supabase (recommended)
-   DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres"
-
-   # Or for local PostgreSQL
-   DATABASE_URL="postgresql://username:password@localhost:5432/family_tree_db?schema=public"
+   # Database - Supabase
+   DATABASE_URL="postgresql://postgres.YOUR_PROJECT_REF:YOUR_DB_PASSWORD@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
 
    # Application settings
    PORT=3000
    NODE_ENV=development
    FRONTEND_URL=http://localhost:5173
+
+   # Supabase
+   SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+   SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+   ```
+
+   **Frontend Environment:**
+
+   ```bash
+   cp apps/frontend/.env.example apps/frontend/.env
+   ```
+
+   Update `apps/frontend/.env` with your Supabase credentials:
+
+   ```env
+   VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+   VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your_supabase_anon_key
+   VITE_API_URL=http://localhost:3000
    ```
 
 4. **Set up the database**

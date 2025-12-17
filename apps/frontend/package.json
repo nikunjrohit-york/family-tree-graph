@@ -13,12 +13,15 @@
   },
   "dependencies": {
     "@family-tree/shared": "*",
-    "@supabase/supabase-js": "^2.38.0",
+    "@heroicons/react": "^2.2.0",
+    "@supabase/supabase-js": "^2.88.0",
     "axios": "^1.6.0",
     "konva": "^9.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-konva": "^18.2.10",
+    "react-router-dom": "^7.10.1",
+    "react-toastify": "^11.0.5",
     "zustand": "^4.4.0"
   },
   "devDependencies": {
