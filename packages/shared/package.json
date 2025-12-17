@@ -12,7 +12,10 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "lint": "echo 'Linting shared package...' && tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts\" --fix",
+    "lint:fix": "eslint \"src/**/*.ts\" --fix",
+    "lint:check": "eslint \"src/**/*.ts\"",
+    "type-check": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "devDependencies": {
